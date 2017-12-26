@@ -21,7 +21,7 @@ export default function build (inputOptions: InputOptions, outputOptions: Output
 	if (!silent)
 		stderr(
 			chalk.cyan(
-				`\n${chalk.bold(inputOptions.input)} → ${chalk.bold(
+				`\n${chalk.bold(<string>inputOptions.input)} → ${chalk.bold(
 					files.join(', ')
 				)}...`
 			)

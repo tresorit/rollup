@@ -4,7 +4,7 @@ import { GenericStatementNode } from './shared/Statement';
 export default class EmptyStatement extends GenericStatementNode {
 	type: 'EmptyStatement';
 
-	render (code: MagicString, _es: boolean) {
+	render (code: MagicString) {
 		if (
 			this.parent.type === 'BlockStatement' ||
 			this.parent.type === 'Program'

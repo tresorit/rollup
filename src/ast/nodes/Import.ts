@@ -22,7 +22,7 @@ export default class Import extends ExpressionBase {
 		}
 	}
 
-	render (code: MagicString, _es: boolean) {
+	render (code: MagicString) {
 		// if we have the module in the bundle, inline as Promise.resolve(namespace)
 		let resolution: string;
 		if (this.resolution instanceof NamespaceVariable) {

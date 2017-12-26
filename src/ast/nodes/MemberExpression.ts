@@ -222,9 +222,9 @@ export default class MemberExpression extends ExpressionBase {
 		}
 	}
 
-	render (code: MagicString, es: boolean) {
+	render (code: MagicString) {
 		if (this.variable) {
-			code.overwrite(this.start, this.end, this.variable.getName(es), {
+			code.overwrite(this.start, this.end, this.variable.getName(), {
 				storeName: true,
 				contentOnly: false
 			});
@@ -235,7 +235,7 @@ export default class MemberExpression extends ExpressionBase {
 			});
 		}
 
-		super.render(code, es);
+		super.render(code);
 	}
 
 	someReturnExpressionWhenCalledAtPath (

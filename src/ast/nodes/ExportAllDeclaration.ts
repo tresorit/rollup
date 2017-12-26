@@ -11,7 +11,7 @@ export default class ExportAllDeclaration extends NodeBase {
 		this.isExportDeclaration = true;
 	}
 
-	render (code: MagicString, _es: boolean) {
+	render (code: MagicString) {
 		code.remove(this.leadingCommentStart || this.start, this.next || this.end);
 	}
 }

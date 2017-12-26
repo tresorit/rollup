@@ -63,7 +63,7 @@ export interface Node extends Entity {
 	 */
 	initialise (parentScope: Scope): void;
 	initialiseAndDeclare (parentScope: Scope, kind: string, init: ExpressionEntity | null): void;
-	render(code: MagicString, es: boolean): void;
+	render(code: MagicString): void;
 
 	/**
 	 * Start a new execution path to determine if this node has an effect on the bundle and
@@ -191,8 +191,8 @@ export class NodeBase implements Node {
 		return location;
 	}
 
-	render (code: MagicString, es: boolean) {
-		this.eachChild(child => child.render(code, es));
+	render (code: MagicString) {
+		this.eachChild(child => child.render(code));
 	}
 
 	shouldBeIncluded () {
