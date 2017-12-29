@@ -33,11 +33,44 @@ export default class Bundle {
 	externalModules: ExternalModule[];
 	entryModule: Module;
 
-	constructor (graph: Graph, orderedModules: Module[], externalModules: ExternalModule[], entryModule: Module) {
+	constructor (graph: Graph, orderedModules: Module[]) {
 		this.graph = graph;
 		this.orderedModules = orderedModules;
-		this.externalModules = externalModules;
+		this.externalModules = undefined;
+		this.entryModule = undefined;
+	}
+
+	bind () {
+		this.orderedModules.forEach(module => module.bindImportSpecifiers());
+		this.orderedModules.forEach(module => module.bindReferences());
+	}
+
+	includeMarked (treeshake: boolean) {
+		if (treeshake) {
+			let addedNewNodes;
+			do {
+				addedNewNodes = false;
+				this.orderedModules.forEach(module => {
+					if (module.includeInBundle()) {
+						addedNewNodes = true;
+					}
+				});
+			} while (addedNewNodes);
+		} else {
+			// Necessary to properly replace namespace imports
+			this.orderedModules.forEach(module => module.includeAllInBundle());
+		}
+	}
+
+	setFascade (entryModule: Module) {
 		this.entryModule = entryModule;
+	}
+
+	processExternals () {
+		// prune unused external imports
+		this.externalModules = this.graph.externalModules.filter(module => {
+			return module.used || !this.graph.isPureExternalModule(module.id);
+		});
 	}
 
 	collectAddon (initialAddon: string, addonName: 'banner' | 'footer' | 'intro' | 'outro', sep: string = '\n') {

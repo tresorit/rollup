@@ -34,6 +34,7 @@ import ImportNamespaceSpecifier from './ast/nodes/ImportNamespaceSpecifier';
 import { RollupWarning } from './rollup/index';
 import ExternalModule from './ExternalModule';
 import Import from './ast/nodes/Import';
+import ExternalVariable from './ast/variables/ExternalVariable';
 
 const setModuleDynamicImportsReturnBinding = wrapDynamicImportPlugin(acorn);
 
@@ -384,6 +385,41 @@ export default class Module {
 		return makeLegal(ext ? base.slice(0, -ext.length) : base);
 	}
 
+	mark () {
+		this.getExports().forEach(name => {
+			const variable = this.traceExport(name);
+
+			variable.exportName = name;
+			variable.includeVariable();
+
+			if (variable.isNamespace) {
+				(<NamespaceVariable>variable).needsNamespaceBlock = true;
+			}
+		});
+
+		this.getReexports().forEach(name => {
+			const variable = this.traceExport(name);
+
+			if (variable.isExternal) {
+				variable.reexported = (<ExternalVariable>variable).module.reexported = true;
+			} else {
+				variable.exportName = name;
+				variable.includeVariable();
+			}
+		});
+	}
+
+	link () {
+		this.sources.forEach(source => {
+			const id = this.resolvedIds[source];
+
+			if (id) {
+				const module = this.graph.moduleById.get(id);
+				this.dependencies.push(<Module>module);
+			}
+		});
+	}
+
 	bindImportSpecifiers () {
 		[this.imports, this.reexports].forEach(specifiers => {
 			keys(specifiers).forEach(name => {
@@ -399,15 +435,6 @@ export default class Module {
 		this.exportAllModules = this.exportAllSources.map(source => {
 			const id = this.resolvedIds[source] || this.resolvedExternalIds[source];
 			return this.graph.moduleById.get(id);
-		});
-
-		this.sources.forEach(source => {
-			const id = this.resolvedIds[source];
-
-			if (id) {
-				const module = this.graph.moduleById.get(id);
-				this.dependencies.push(<Module>module);
-			}
 		});
 	}
 
