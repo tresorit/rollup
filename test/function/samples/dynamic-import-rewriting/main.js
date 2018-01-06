@@ -1,1 +1,1 @@
-export { x as y } from './foo';
+export { x as y, promise } from './foo';

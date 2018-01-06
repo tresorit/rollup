@@ -26,6 +26,7 @@ import Graph from './Graph';
 import ExternalModule from './ExternalModule';
 import ExternalVariable from './ast/variables/ExternalVariable';
 import ExportDefaultVariable from './ast/variables/ExportDefaultVariable';
+import { DynamicImportMechanism } from './ast/nodes/Import';
 
 export default class Bundle {
 	graph: Graph;
@@ -181,36 +182,44 @@ export default class Bundle {
 				let magicString = new MagicStringBundle({ separator: '\n\n' });
 				const usedModules: Module[] = [];
 
+				const es = options.format === 'es';
+				let dynamicImportMechanism: DynamicImportMechanism;
+
+				if (!es) {
+					if (options.format === 'cjs') {
+						dynamicImportMechanism = {
+							left: 'Promise.resolve(require(',
+							right: '))'
+						};
+					} else if (options.format === 'amd') {
+						dynamicImportMechanism = {
+							left: 'new Promise((resolve, reject) => require([',
+							right: '], resolve, reject))'
+						}
+					}
+				}
+
 				timeStart('render modules');
 
 				this.orderedModules.forEach(module => {
-					const source = module.render(
-						options.format === 'es',
-						this.graph.legacy,
-						options.freeze !== false
-					);
-
 					module.dynamicImportResolutions.forEach((replacement, index) => {
 						const node = module.dynamicImports[index];
 
 						if (!replacement)
 							return;
 
-						// string specifier -> direct resolution
-						// if we have the module, inline as Promise.resolve(namespace)
-						// ensuring that we create a namespace import of it as well
 						if (replacement instanceof Module) {
-							const namespace = replacement.namespace();
-							const identifierName = namespace.getName(true);
-							source.overwrite(node.parent.start, node.parent.end, `Promise.resolve( ${identifierName} )`);
+							node.setResolution(replacement.namespace(), { left: 'Promise.resolve().then(() => ', right: ')' });
 						// external dynamic import resolution
 						} else if (replacement instanceof ExternalModule) {
-							source.overwrite(node.parent.arguments[0].start, node.parent.arguments[0].end, `"${replacement.id}"`);
+							node.setResolution(`"${replacement.id}"`, dynamicImportMechanism);
 						// AST Node -> source replacement
 						} else {
-							source.overwrite(node.parent.arguments[0].start, node.parent.arguments[0].end, replacement);
+							node.setResolution(replacement, dynamicImportMechanism);
 						}
 					});
+
+					const source = module.render(es, this.graph.legacy, options.freeze !== false);
 
 					if (source.toString().length) {
 						magicString.addSource(source);

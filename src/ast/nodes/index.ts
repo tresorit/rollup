@@ -26,6 +26,7 @@ import FunctionDeclaration from './FunctionDeclaration';
 import FunctionExpression from './FunctionExpression';
 import Identifier from './Identifier';
 import IfStatement from './IfStatement';
+import Import from './Import';
 import ImportDeclaration from './ImportDeclaration';
 import LabeledStatement from './LabeledStatement';
 import Literal from './Literal';
@@ -87,6 +88,7 @@ const nodes: {
 	FunctionExpression,
 	Identifier,
 	IfStatement,
+	Import,
 	ImportDeclaration,
 	LabeledStatement,
 	Literal,

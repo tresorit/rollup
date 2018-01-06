@@ -1,4 +1,4 @@
-var assert = require( 'assert' );
+var assert = require('assert');
 
 module.exports = {
 	description: 'Dynamic import string specifier resolving',
@@ -6,20 +6,15 @@ module.exports = {
 		experimentalDynamicImport: true,
 		external: ['asdf'],
 		plugins: [{
-			resolveDynamicImport ( specifier, parent ) {
+			resolveDynamicImport (specifier, parent) {
 				return 'asdf';
 			}
 		}]
 	},
-	code: function ( code ) {
-		assert( code.indexOf( 'import( "asdf" )' ) > 0 );
+	exports (exports) {
+		return exports.promise;
 	},
-	runtimeError: function ( error ) {
-		try {
-			assert.equal( "Unexpected token import", error.message );
-		}
-		catch ( e ) {
-			assert.equal( "Unexpected reserved word", error.message );
-		}
+	runtimeError: function (error) {
+		assert.equal("Cannot find module 'asdf'", error.message);
 	}
 };
