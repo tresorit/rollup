@@ -478,54 +478,34 @@ export default class Graph {
 
 	private fetchAllDependencies (module: Module) {
 		// resolve and fetch dynamic imports where possible
-		const fetchDynamicImportsPromise = Promise.all(module.dynamicImports.map((node, index) => {
-			const importArgument = node.parent.arguments[0];
-			let dynamicImportSpecifier: string | Node;
-			if (importArgument.type === 'TemplateLiteral') {
-				if ((<TemplateLiteral>importArgument).expressions.length === 0 && (<TemplateLiteral>importArgument).quasis.length === 1) {
-					dynamicImportSpecifier = (<TemplateLiteral>importArgument).quasis[0].value.cooked;
-				}
-			} else if (importArgument.type === 'Literal') {
-				if (typeof (<Literal>importArgument).value === 'string') {
-					dynamicImportSpecifier = (<Literal<string>>importArgument).value;
-				}
-			} else {
-				dynamicImportSpecifier = importArgument;
-			}
+		const fetchDynamicImportsPromise = Promise.all(
+			module.getDynamicImportExpressions()
+			.map((dynamicImportExpression, index) => {
+				return Promise.resolve(this.resolveDynamicImport(dynamicImportExpression, module.id))
+				.then(replacement => {
+					if (!replacement) {
+						module.dynamicImportResolutions[index] = null;
+					} else if (typeof dynamicImportExpression !== 'string') {
+						module.dynamicImportResolutions[index] = replacement;
+					} else if (this.isExternal(replacement, module.id, true)) {
+						if (!this.moduleById.has(replacement)) {
+							const module = new ExternalModule(this, replacement);
+							this.externalModules.push(module);
+							this.moduleById.set(replacement, module);
+						}
 
-			return Promise.resolve(this.resolveDynamicImport(dynamicImportSpecifier, module.id))
-			.then(replacement => {
-				if (!replacement) {
-					module.dynamicImportResolutions[index] = null;
-					return;
-				}
-
-				if (typeof dynamicImportSpecifier !== 'string') {
-					module.dynamicImportResolutions[index] = replacement;
-					return;
-				}
-
-				// add dynamic import to the graph
-				if (this.isExternal(replacement, module.id, true)) {
-					if (!this.moduleById.has(replacement)) {
-						const module = new ExternalModule(this, replacement);
-						this.externalModules.push(module);
-						this.moduleById.set(replacement, module);
+						const externalModule = <ExternalModule>this.moduleById.get(replacement);
+						module.dynamicImportResolutions[index] = externalModule;
+						externalModule.exportsNamespace = true;
+					} else {
+						return this.fetchModule(replacement, module.id)
+						.then(depModule => {
+							module.dynamicImportResolutions[index] = depModule;
+						});
 					}
-
-					const externalModule = <ExternalModule>this.moduleById.get(replacement);
-					module.dynamicImportResolutions[index] = externalModule;
-					externalModule.exportsNamespace = true;
-					return;
-				}
-
-				return this.fetchModule(replacement, module.id)
-				.then(depModule => {
-					module.dynamicImportResolutions[index] = depModule;
-					return;
 				});
-			});
-		}));
+			})
+		);
 		fetchDynamicImportsPromise.catch(() => {});
 
 		return mapSequence(module.sources, source => {

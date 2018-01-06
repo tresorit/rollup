@@ -165,6 +165,43 @@ export default class Bundle {
 		this.graph.scope.deshadow(toDeshadow);
 	}
 
+	private setRenderResolutions (options: OutputOptions) {
+		let dynamicImportMechanism: DynamicImportMechanism;
+
+		if (options.format !== 'es') {
+			if (options.format === 'cjs') {
+				dynamicImportMechanism = {
+					left: 'Promise.resolve(require(',
+					right: '))'
+				};
+			} else if (options.format === 'amd') {
+				dynamicImportMechanism = {
+					left: 'new Promise((resolve, reject) => require([',
+					right: '], resolve, reject))'
+				}
+			}
+		}
+
+		this.orderedModules.forEach(module => {
+			module.dynamicImportResolutions.forEach((replacement, index) => {
+				const node = module.dynamicImports[index];
+
+				if (!replacement)
+					return;
+
+				if (replacement instanceof Module) {
+					node.setResolution(replacement.namespace(), { left: 'Promise.resolve().then(() => ', right: ')' });
+				// external dynamic import resolution
+				} else if (replacement instanceof ExternalModule) {
+					node.setResolution(`"${replacement.id}"`, dynamicImportMechanism);
+				// AST Node -> source replacement
+				} else {
+					node.setResolution(replacement, dynamicImportMechanism);
+				}
+			});
+		});
+	}
+
 	render (options: OutputOptions) {
 		return Promise.resolve()
 			.then(() => {
@@ -182,44 +219,16 @@ export default class Bundle {
 				let magicString = new MagicStringBundle({ separator: '\n\n' });
 				const usedModules: Module[] = [];
 
-				const es = options.format === 'es';
-				let dynamicImportMechanism: DynamicImportMechanism;
-
-				if (!es) {
-					if (options.format === 'cjs') {
-						dynamicImportMechanism = {
-							left: 'Promise.resolve(require(',
-							right: '))'
-						};
-					} else if (options.format === 'amd') {
-						dynamicImportMechanism = {
-							left: 'new Promise((resolve, reject) => require([',
-							right: '], resolve, reject))'
-						}
-					}
-				}
-
 				timeStart('render modules');
 
+				this.setRenderResolutions(options);
+
 				this.orderedModules.forEach(module => {
-					module.dynamicImportResolutions.forEach((replacement, index) => {
-						const node = module.dynamicImports[index];
-
-						if (!replacement)
-							return;
-
-						if (replacement instanceof Module) {
-							node.setResolution(replacement.namespace(), { left: 'Promise.resolve().then(() => ', right: ')' });
-						// external dynamic import resolution
-						} else if (replacement instanceof ExternalModule) {
-							node.setResolution(`"${replacement.id}"`, dynamicImportMechanism);
-						// AST Node -> source replacement
-						} else {
-							node.setResolution(replacement, dynamicImportMechanism);
-						}
-					});
-
-					const source = module.render(es, this.graph.legacy, options.freeze !== false);
+					const source = module.render(
+						options.format === 'es',
+						this.graph.legacy,
+						options.freeze !== false
+					);
 
 					if (source.toString().length) {
 						magicString.addSource(source);
