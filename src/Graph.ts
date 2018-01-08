@@ -21,14 +21,10 @@ import {
 	TreeshakingOptions,
 	WarningHandler
 } from './rollup/index';
-import { isNamespaceVariable } from './ast/variables/NamespaceVariable';
-import { isExternalVariable } from './ast/variables/ExternalVariable';
 import { RawSourceMap } from 'source-map';
 import Program from './ast/nodes/Program';
 import { Node } from './ast/nodes/shared/Node';
 import Bundle from './Bundle';
-import TemplateLiteral from './ast/nodes/TemplateLiteral';
-import Literal from './ast/nodes/Literal';
 
 export type ResolveDynamicImportHandler = (specifier: string | Node, parentId: string) => Promise<string | void>;
 

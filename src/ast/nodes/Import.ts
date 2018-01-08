@@ -1,14 +1,14 @@
-import { Node } from './shared/Node';
 import CallExpression from './CallExpression';
 import MagicString from 'magic-string';
 import NamespaceVariable from '../variables/NamespaceVariable';
+import { ExpressionBase } from './shared/Expression';
 
 export interface DynamicImportMechanism {
 	left: string,
 	right: string
 };
 
-export default class Import extends Node {
+export default class Import extends ExpressionBase {
 	type: 'Import';
 	parent: CallExpression;
 
