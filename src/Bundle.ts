@@ -124,7 +124,11 @@ export default class Bundle {
 		}
 
 		let i = 0;
-		safeExportName = variable.exportName || variable.name;
+		if (variable.exportName) {
+			safeExportName = variable.exportName;
+		} else {
+			safeExportName = variable.exportName = variable.name;
+		}
 
 		let curExport = this.exports[safeExportName];
 		while (curExport) {
@@ -477,10 +481,15 @@ export default class Bundle {
 			forOwn(module.scope.variables, variable => {
 				if (!(<ExportDefaultVariable>variable).isDefault || !(<ExportDefaultVariable>variable).hasId) {
 					let safeName;
-					if (!es && variable.exportName && variable.isReassigned) {
-						safeName = 'exports.' + variable.exportName;
-					} else {
+					if (es || !variable.isReassigned) {
 						safeName = getSafeName(variable.name);
+					} else {
+						const safeExportName = this.exportedVariables.get(variable);
+						if (safeExportName) {
+							safeName = `exports.${safeExportName}`;
+						} else {
+							safeName = getSafeName(variable.name);
+						}
 					}
 					variable.setSafeName(safeName);
 				}
