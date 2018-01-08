@@ -2,7 +2,7 @@ define(['exports', './chunk-bd892da6.js'], function (exports, __chunkBd892da6_js
 
 	var p = 42;
 
-	new __chunkBd892da6_js.C().fn(p);
+	new __chunkBd892da6_js.C$1().fn(p);
 
 	exports.p = p;
 

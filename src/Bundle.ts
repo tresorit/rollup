@@ -450,7 +450,7 @@ export default class Bundle {
 		});
 
 		this.imports.forEach(impt => {
-			impt.variables.forEach(({ module, variable }) => {
+			impt.variables.forEach(({ name, module, variable }) => {
 				let safeName;
 				if (module.isExternal) {
 					if (variable.name === '*') {
@@ -462,12 +462,12 @@ export default class Bundle {
 							safeName = module.name;
 						}
 					} else {
-						safeName = es ? getSafeName(variable.name) : `${module.name}.${variable.name}`;
+						safeName = es ? getSafeName(variable.name) : `${module.name}.${name}`;
 					}
 				} else if (es) {
 					safeName = getSafeName(variable.name);
 				} else {
-					safeName = `${(<Module>module).bundle.name}.${variable.name}`;
+					safeName = `${(<Module>module).bundle.name}.${name}`;
 				}
 				variable.setSafeName(safeName);
 			});
