@@ -94,7 +94,7 @@ export interface OutputOptions {
 	name?: string;
 	globals?: GlobalsOption;
 
-	paths?: Record<string, string> | ((id: string) => string);
+	paths?: Record<string, string> | ((id: string, parent: string) => string);
 	banner?: string;
 	footer?: string;
 	intro?: string;

@@ -10,7 +10,7 @@ import { mapSequence } from './utils/promise';
 import transform from './utils/transform';
 import relativeId from './utils/relativeId';
 import error from './utils/error';
-import { dirname, isAbsolute, isRelative, normalize, relative, resolve } from './utils/path';
+import { isAbsolute, isRelative, normalize, relative, resolve } from './utils/path';
 import {
 	InputOptions,
 	IsExternalHook,
@@ -53,7 +53,6 @@ export default class Graph {
 	scope: GlobalScope;
 	treeshakingOptions: TreeshakingOptions;
 	varOrConst: 'var' | 'const';
-	baseDirname: string;
 	dependsOn: { [id: string]: { [id: string]: boolean } };
 	stronglyDependsOn: { [id: string]: { [id: string]: boolean } };
 
@@ -166,29 +165,9 @@ export default class Graph {
 		}
 	}
 
-	updateBaseDirname (entryId: string) {
-		if (!this.baseDirname) {
-			this.baseDirname = dirname(entryId);
-		}
-		else {
-			let i = 0;
-			let minLen = Math.min(entryId.length, this.baseDirname.length);
-			let matchLen = 0;
-			while (i < minLen && entryId[i] === this.baseDirname[i]) {
-				if (entryId[i] === '/' || entryId[i] === '\\') {
-					matchLen = i;
-				}
-				i++;
-			}
-			if (i !== minLen) {
-				this.baseDirname = entryId.substr(0, matchLen);
-			}
-		}
-	}
-
-	getPathRelativeToBaseDirname (resolvedId: string): string {
+	getPathRelativeToBaseDirname (resolvedId: string, parentId: string): string {
 		if (isRelative(resolvedId) || isAbsolute(resolvedId)) {
-			const relativeToEntry = normalize(relative(this.baseDirname, resolvedId));
+			const relativeToEntry = normalize(relative(path.dirname(parentId), resolvedId));
 
 			return isRelative(relativeToEntry)
 				? relativeToEntry
@@ -286,7 +265,6 @@ export default class Graph {
 		timeStart('phase 1');
 		return this.loadModule(entryModuleId)
 			.then(entryModule => {
-				this.updateBaseDirname(entryModule.id);
 				timeEnd('phase 1');
 
 				// Phase 2 - linking. We populate the module dependency links and
@@ -360,7 +338,6 @@ export default class Graph {
 				timeStart('phase 3');
 
 				entryModules.forEach(entryModule => {
-					this.updateBaseDirname(entryModule.id);
 					entryModule.mark()
 				});
 

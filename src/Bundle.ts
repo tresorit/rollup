@@ -617,13 +617,13 @@ export default class Bundle {
 				const optionsPaths = options.paths;
 				const getPath =
 					typeof optionsPaths === 'function'
-						? (id: string) => optionsPaths(id) || this.graph.getPathRelativeToBaseDirname(id)
+						? (id: string) => optionsPaths(id, this.id) || this.graph.getPathRelativeToBaseDirname(id, this.id)
 						: optionsPaths
 							? (id: string) =>
 								optionsPaths.hasOwnProperty(id)
 									? optionsPaths[id]
-									: this.graph.getPathRelativeToBaseDirname(id)
-							: (id: string) => this.graph.getPathRelativeToBaseDirname(id);
+									: this.graph.getPathRelativeToBaseDirname(id, this.id)
+							: (id: string) => this.graph.getPathRelativeToBaseDirname(id, this.id);
 
 				if (intro) intro += '\n\n';
 				if (outro) outro = `\n\n${outro}`;
